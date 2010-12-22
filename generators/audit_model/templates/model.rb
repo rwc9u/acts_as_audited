@@ -3,16 +3,16 @@ require 'set'
 # Audit saves the changes to ActiveRecord models.  It has the following attributes:
 #
 # * <tt>auditable</tt>: the ActiveRecord model that was changed
-# * <tt>user</tt>: the user that performed the change; a string or an ActiveRecord model
+# * <tt><%= human_model %></tt>: the <%= human_model %> that performed the change; a string or an ActiveRecord model
 # * <tt>action</tt>: one of create, update, or delete
 # * <tt>changes</tt>: a serialized hash of all the changes
 # * <tt>created_at</tt>: Time that the change was performed
 #
 class Audit < ActiveRecord::Base
   belongs_to :auditable, :polymorphic => true
-  belongs_to :user, :polymorphic => true
+  belongs_to :<%= human_model %>, :polymorphic => true
 
-  before_create :set_version_number, :set_audit_user
+  before_create :set_version_number, :set_audit_<%= human_model %>
 
   serialize :changes
 
@@ -24,32 +24,32 @@ class Audit < ActiveRecord::Base
   end
 
   # All audits made during the block called will be recorded as made
-  # by +user+. This method is hopefully threadsafe, making it ideal
+  # by +<%= human_model %>+. This method is hopefully threadsafe, making it ideal
   # for background operations that require audit information.
-  def self.as_user(user, &block)
-    Thread.current[:acts_as_audited_user] = user
+  def self.as_<%= human_model %>(<%= human_model %>, &block)
+    Thread.current[:acts_as_audited_<%= human_model %>] = <%= human_model %>
 
     yield
 
-    Thread.current[:acts_as_audited_user] = nil
+    Thread.current[:acts_as_audited_<%= human_model %>] = nil
   end
 
-  # Allows user to be set to either a string or an ActiveRecord object
-  def user_as_string=(user) #:nodoc:
+  # Allows <%= human_model %> to be set to either a string or an ActiveRecord object
+  def <%= human_model %>_as_string=(<%= human_model %>) #:nodoc:
     # reset both either way
-    self.user_as_model = self.username = nil
-    user.is_a?(ActiveRecord::Base) ?
-      self.user_as_model = user :
-      self.username = user
+    self.<%= human_model %>_as_model = self.username = nil
+    <%= human_model %>.is_a?(ActiveRecord::Base) ?
+      self.<%= human_model %>_as_model = <%= human_model %> :
+      self.username = <%= human_model %>
   end
-  alias_method :user_as_model=, :user=
-  alias_method :user=, :user_as_string=
+  alias_method :<%= human_model %>_as_model=, :<%= human_model %>=
+  alias_method :<%= human_model %>=, :<%= human_model %>_as_string=
 
-  def user_as_string #:nodoc:
-    self.user_as_model || self.username
+  def <%= human_model %>_as_string #:nodoc:
+    self.<%= human_model %>_as_model || self.username
   end
-  alias_method :user_as_model, :user
-  alias_method :user, :user_as_string
+  alias_method :<%= human_model %>_as_model, :<%= human_model %>
+  alias_method :<%= human_model %>, :<%= human_model %>_as_string
 
   def revision
     clazz = auditable_type.constantize
@@ -88,7 +88,7 @@ class Audit < ActiveRecord::Base
     end
     block_given? ? result : attributes
   end
-  
+
   def self.assign_revision_attributes(record, attributes)
     attributes.each do |attr, val|
       if record.respond_to?("#{attr}=")
@@ -111,8 +111,8 @@ private
     self.version = max + 1
   end
 
-  def set_audit_user
-    self.user = Thread.current[:acts_as_audited_user] if Thread.current[:acts_as_audited_user]
+  def set_audit_<%= human_model %>
+    self.<%= human_model %> = Thread.current[:acts_as_audited_<%= human_model %>] if Thread.current[:acts_as_audited_<%= human_model %>]
     nil # prevent stopping callback chains
   end
 

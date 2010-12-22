@@ -8,9 +8,9 @@ Gem::Specification.new do |s|
   s.version = "1.1.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Brandon Keepers"]
+  s.authors = ["Brandon Keepers", "Pat George"]
   s.date = %q{2010-04-03}
-  s.email = %q{brandon@opensoul.org}
+  s.email = %q{pat.george@gmail.com}
   s.extra_rdoc_files = [
     "LICENSE",
      "README"
@@ -26,9 +26,11 @@ Gem::Specification.new do |s|
      "generators/audited_migration/USAGE",
      "generators/audited_migration/audited_migration_generator.rb",
      "generators/audited_migration/templates/migration.rb",
+     "generators/audit_model/USAGE",
+     "generators/audit_model/audit_model_generator.rb",
+     "generators/audit_model/templates/model.rb",
      "init.rb",
      "lib/acts_as_audited.rb",
-     "lib/acts_as_audited/audit.rb",
      "lib/acts_as_audited/audit_sweeper.rb",
      "rails/init.rb",
      "test/acts_as_audited_test.rb",
@@ -38,7 +40,7 @@ Gem::Specification.new do |s|
      "test/db/schema.rb",
      "test/test_helper.rb"
   ]
-  s.homepage = %q{http://github.com/collectiveidea/acts_as_audited}
+  s.homepage = %q{http://github.com/pcg79/acts_as_audited}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.6}

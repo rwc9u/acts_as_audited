@@ -33,8 +33,24 @@ module CollectiveIdea #:nodoc:
     module Audited #:nodoc:
       CALLBACKS = [:audit_create, :audit_update, :audit_destroy]
 
-      def self.included(base) # :nodoc:
-        base.extend ClassMethods
+      # The name of the model used to represent a human.  Default: :user
+      mattr_accessor :human_model
+      @@human_model = :user
+
+      class << self
+        # Call this method to modify defaults in your initializers.
+        #
+        # @example
+        #   Audited.configure do |config|
+        #     config.human_model = :person
+        #   end
+        def configure
+          yield self
+        end
+
+        def included(base) # :nodoc:
+          base.extend ClassMethods
+        end
       end
 
       module ClassMethods
@@ -69,7 +85,7 @@ module CollectiveIdea #:nodoc:
 
           class_inheritable_reader :non_audited_columns
           class_inheritable_reader :auditing_enabled
-          
+
           if options[:only]
             except = self.column_names - options[:only].flatten.map(&:to_s)
           else
