@@ -9,11 +9,11 @@ task :default => :test
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
-    gem.name = "acts_as_audited"
-    gem.summary = %Q{ActiveRecord extension that logs all changes to your models in an audits table}
-    gem.email = "brandon@opensoul.org"
-    gem.homepage = "http://github.com/collectiveidea/acts_as_audited"
-    gem.authors = ["Brandon Keepers"]
+    gem.name = "acts_as_audited_customized"
+    gem.summary = %Q{ActiveRecord extension that logs all changes to your models in an audits table additionally allowing you to specify which human model to use (if not 'User')}
+    gem.email = "pat.george@gmail.com"
+    gem.homepage = "http://github.com/pcg79/acts_as_audited"
+    gem.authors = ["Brandon Keepers", "Pat George"]
     gem.add_dependency 'activerecord', '>=2.1'
     gem.add_development_dependency "thoughtbot-shoulda"
     gem.add_development_dependency "jnunemaker-matchy"
