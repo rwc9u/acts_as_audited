@@ -18,20 +18,3 @@ module CollectiveIdea #:nodoc:
     end
   end
 end
-
-class AuditSweeper < ActionController::Caching::Sweeper #:nodoc:
-  def before_create(audit)
-    audit.send("#{CollectiveIdea::Acts::Audited.human_model}=", current_user) unless audit.send(CollectiveIdea::Acts::Audited.human_model)
-  end
-
-  def current_user
-    method = "current_#{CollectiveIdea::Acts::Audited.human_model}"
-    controller.send(method) if controller.respond_to?(method, true)
-  end
-end
-
-ActionController::Base.class_eval do
-  extend CollectiveIdea::ActionController::Audited
-  cache_sweeper :audit_sweeper
-end
-Audit.add_observer(AuditSweeper.instance)
