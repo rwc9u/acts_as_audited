@@ -1,15 +1,15 @@
 class <%= class_name %> < ActiveRecord::Migration
   def self.up
     create_table :audits, :force => true do |t|
-      t.column :auditable_id, :integer
-      t.column :auditable_type, :string
-      t.column :<%= human_model %>_id, :integer
-      t.column :<%= human_model %>_type, :string
-      t.column :username, :string
-      t.column :action, :string
-      t.column :changes, :text
-      t.column :version, :integer, :default => 0
-      t.column :created_at, :datetime
+      t.integer  :auditable_id
+      t.string   :auditable_type
+      t.integer  :<%= human_model %>_id
+      t.string   :<%= human_model %>_type
+      t.string   :username
+      t.string   :action
+      t.text     :changes
+      t.integer  :version, :default => 0
+      t.datetime :created_at
     end
 
     add_index :audits, [:auditable_id, :auditable_type], :name => 'auditable_index'
