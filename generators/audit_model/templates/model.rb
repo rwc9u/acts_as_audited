@@ -19,19 +19,39 @@ class Audit < ActiveRecord::Base
   cattr_accessor :audited_class_names
   self.audited_class_names = Set.new
 
-  def self.audited_classes
-    self.audited_class_names.map(&:constantize)
-  end
+  class << self
+    def audited_classes
+      self.audited_class_names.map(&:constantize)
+    end
 
-  # All audits made during the block called will be recorded as made
-  # by +<%= human_model %>+. This method is hopefully threadsafe, making it ideal
-  # for background operations that require audit information.
-  def self.as_<%= human_model %>(<%= human_model %>, &block)
-    Thread.current[:acts_as_audited_<%= human_model %>] = <%= human_model %>
+    # All audits made during the block called will be recorded as made
+    # by +user+. This method is hopefully threadsafe, making it ideal
+    # for background operations that require audit information.
+    def as_user(user, &block)
+      Thread.current[:acts_as_audited_<%= human_model %>] = user
+      yield
+      Thread.current[:acts_as_audited_<%= human_model %>] = nil
+    end
 
-    yield
+    def manual_audit(<%= human_model %>, action, auditable = nil)
+      attribs = { :action => action }
 
-    Thread.current[:acts_as_audited_<%= human_model %>] = nil
+      case <%= human_model %>
+      when ActiveRecord::Base
+        attribs[:<%= human_model %>] = <%= human_model %>
+      when String
+        attribs[:username] = <%= human_model %>
+      end
+
+      case auditable
+      when ActiveRecord::Base
+        attribs[:auditable] = auditable
+      when String
+        attribs[:auditable_type] = auditable
+      end
+
+      Audit.create attribs
+    end
   end
 
   # Allows <%= human_model %> to be set to either a string or an ActiveRecord object
