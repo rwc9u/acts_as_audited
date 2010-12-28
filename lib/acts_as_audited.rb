@@ -81,12 +81,14 @@ module CollectiveIdea #:nodoc:
           # don't allow multiple calls
           return if self.included_modules.include?(CollectiveIdea::Acts::Audited::InstanceMethods)
 
-          reserved_options = [:protect, :on, :create, :update, :destroy, :only, :except]
+          reserved_options = [:protect, :on, :create, :update, :destroy, :only, :except, :if, :unless]
           options = {:protect => accessible_attributes.nil?}.merge(options)
 
           class_inheritable_reader :non_audited_columns
           class_inheritable_reader :auditing_enabled
           class_inheritable_reader :manually_set_columns
+          class_inheritable_reader :if_condition
+          class_inheritable_reader :unless_condition
 
           if options[:only]
             except = self.column_names - options[:only].flatten.map(&:to_s)
@@ -97,6 +99,8 @@ module CollectiveIdea #:nodoc:
           end
           write_inheritable_attribute :non_audited_columns, except
           write_inheritable_attribute :manually_set_columns, options.reject {|k, v| reserved_options.include?(k) }
+          write_inheritable_attribute :if_condition, options.delete(:if)
+          write_inheritable_attribute :unless_condition, options.delete(:unless)
 
           has_many :audits, :as => :auditable, :order => "#{Audit.quoted_table_name}.version"
           attr_protected :audit_ids if options[:protect]
@@ -193,11 +197,7 @@ module CollectiveIdea #:nodoc:
         def on_behalf_of_result
           case on_behalf_of_call
           when Proc
-            if on_behalf_of_call.arity == 1
-              on_behalf_of_call.call(self)
-            else
-              on_behalf_of_call
-            end
+            on_behalf_of_call.arity > 0 ? on_behalf_of_call.call(self) : on_behalf_of_call
           else
             on_behalf_of_call
           end
@@ -207,11 +207,7 @@ module CollectiveIdea #:nodoc:
           manually_set_columns.inject(set_current_user) do |attrs, (attrib, value)|
             attrs[attrib] = case value
               when Proc
-                if value.arity > 0
-                  value.call(self)
-                else
-                  value.call
-                end
+                value.arity > 0 ? value.call(self) : value.call
               else
                 value
               end
@@ -222,6 +218,18 @@ module CollectiveIdea #:nodoc:
         def set_current_user
           method = "current_#{CollectiveIdea::Acts::Audited.human_model}"
           self.class.respond_to?(method) ? { CollectiveIdea::Acts::Audited.human_model => self.class.send(method) } : {}
+        end
+
+        def eval_condition(condition)
+          condition.arity > 0 ? condition.call(self) : condition.call
+        end
+
+        def eval_if_condition
+          !if_condition || eval_condition(if_condition)
+        end
+
+        def eval_unless_condition
+          !unless_condition || !eval_condition(unless_condition)
         end
 
         def audits_to(version = nil)
@@ -253,7 +261,7 @@ module CollectiveIdea #:nodoc:
 
         def write_audit(attrs)
           attrs = attrs.merge(set_manually_set_columns)
-          self.audits.create attrs if auditing_enabled
+          self.audits.create attrs if auditing_enabled && eval_if_condition && eval_unless_condition
         end
       end # InstanceMethods
 
