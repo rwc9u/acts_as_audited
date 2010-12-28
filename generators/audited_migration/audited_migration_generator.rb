@@ -6,7 +6,6 @@ class AuditedMigrationGenerator < Rails::Generator::NamedBase
 
   def manifest
     record do |m|
-      m.directory(File.join('db', 'migrate'))
       m.migration_template 'migration.rb', 'db/migrate', :assigns => { :human_model => @human_model }
     end
   end
