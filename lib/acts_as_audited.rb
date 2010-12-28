@@ -220,7 +220,7 @@ module CollectiveIdea #:nodoc:
         end
 
         def eval_condition(condition)
-          condition.arity > 0 ? condition.call(self) : condition.call
+          evaluate(condition)
         end
 
         def eval_if_condition
