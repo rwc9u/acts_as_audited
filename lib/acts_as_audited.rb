@@ -194,23 +194,22 @@ module CollectiveIdea #:nodoc:
           end
         end
 
-        def on_behalf_of_result
-          case on_behalf_of_call
+        def evaluate(value)
+          case value
           when Proc
-            on_behalf_of_call.arity > 0 ? on_behalf_of_call.call(self) : on_behalf_of_call
+            value.arity > 0 ? value.call(self) : value.call
           else
-            on_behalf_of_call
+            value
           end
+        end
+
+        def on_behalf_of_result
+          evaluate(on_behalf_of_call)
         end
 
         def set_manually_set_columns
           manually_set_columns.inject(set_current_user) do |attrs, (attrib, value)|
-            attrs[attrib] = case value
-              when Proc
-                value.arity > 0 ? value.call(self) : value.call
-              else
-                value
-              end
+            attrs[attrib] = evaluate(value)
             attrs
           end
         end
