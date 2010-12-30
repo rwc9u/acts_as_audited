@@ -1,9 +1,0 @@
-Description:
-	The audit model generator creates the Audit model in app/models/ associating it with the correct "human" class ("user" by default).
-
-Example:
-    ./script/generate audit_model Person
-
-    This will create the Audit model in app/models/ associating it to the Person model.
-
-    You must generate the migration using the same "human" class.

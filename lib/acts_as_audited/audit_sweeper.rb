@@ -18,3 +18,23 @@ module CollectiveIdea #:nodoc:
     end
   end
 end
+
+ActionController::Base.class_eval do
+  extend CollectiveIdea::ActionController::Audited
+end
+
+class AuditSweeper < ActionController::Caching::Sweeper #:nodoc:
+  def current_user_method
+    "current_#{CollectiveIdea::Acts::Audited.human_model}".to_sym
+  end
+
+  def before_create(audit)
+    raise "Got here"
+    audit.send("#{CollectiveIdea::Acts::Audited.human_model}=".to_sym, current_user) unless audit.send(CollectiveIdea::Acts::Audited.human_model)
+  end
+
+  def current_user
+    controller.send current_user_method if controller.respond_to?(current_user_method, true)
+  end
+end
+

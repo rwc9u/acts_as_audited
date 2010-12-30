@@ -37,6 +37,16 @@ module CollectiveIdea #:nodoc:
       mattr_accessor :human_model
       @@human_model = :user
 
+      # Any additional attributes you wish your model to write to.  Default: []
+      mattr_accessor :additional_attributes
+      @@additional_attributes = []
+
+      # Whether or not you want to use the Observer to set current_<%= human_model %>.
+      # Set this to :false if your models have access to the current_<%= human_model %> method.
+      # Default :true
+      mattr_accessor :use_observer
+      @@use_observer = :true
+
       class << self
         # Call this method to modify defaults in your initializers.
         #
@@ -46,6 +56,36 @@ module CollectiveIdea #:nodoc:
         #   end
         def configure
           yield self
+
+          modify_audit_model
+        end
+
+        def modify_audit_model
+          Audit.class_eval do
+            belongs_to @@human_model, :polymorphic => true
+
+            [@@additional_attributes].flatten.each do |attrib|
+              belongs_to attrib, :class_name => @@human_model.to_s.classify, :foreign_key => "#{attrib}_id"
+            end
+
+            alias_method :user_as_model=, "#{@@human_model}=".to_sym
+            alias_method "#{@@human_model}=".to_sym, :user_as_string=
+
+            alias_method :user_as_model, @@human_model
+            alias_method @@human_model, :user_as_string
+
+            def set_audit_user
+              self.send(@@human_model, Thread.current[:acts_as_audited_user]) if Thread.current[:acts_as_audited_user]
+              nil # prevent stopping callback chains
+            end
+          end
+
+          if @@use_observer
+            ::ActionController::Base.class_eval do
+              cache_sweeper :audit_sweeper
+            end
+            Audit.add_observer(AuditSweeper.instance)
+          end
         end
 
         def included(base) # :nodoc:
@@ -216,7 +256,7 @@ module CollectiveIdea #:nodoc:
 
         def set_current_user
           method = "current_#{CollectiveIdea::Acts::Audited.human_model}"
-          self.class.respond_to?(method) ? { CollectiveIdea::Acts::Audited.human_model => self.class.send(method) } : {}
+          !CollectiveIdea::Acts::Audited.use_observer && self.class.respond_to?(method) ? { CollectiveIdea::Acts::Audited.human_model => self.class.send(method) } : {}
         end
 
         def eval_condition(condition)
@@ -296,7 +336,6 @@ module CollectiveIdea #:nodoc:
         def audit_as( user, &block )
           Audit.as_user( user, &block )
         end
-
       end
     end
   end
