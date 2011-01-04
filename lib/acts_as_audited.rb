@@ -121,7 +121,6 @@ module CollectiveIdea #:nodoc:
           # don't allow multiple calls
           return if self.included_modules.include?(CollectiveIdea::Acts::Audited::InstanceMethods)
 
-          reserved_options = [:protect, :on, :create, :update, :destroy, :only, :except, :if, :unless]
           options = {:protect => accessible_attributes.nil?}.merge(options)
 
           class_inheritable_reader :non_audited_columns
@@ -137,12 +136,13 @@ module CollectiveIdea #:nodoc:
               'created_at', 'updated_at', 'created_on', 'updated_on']
             except |= Array(options[:except]).collect(&:to_s) if options[:except]
           end
+
           write_inheritable_attribute :non_audited_columns, except
           write_inheritable_attribute :manually_set_columns, options.reject {|k, v| reserved_options.include?(k) }
           write_inheritable_attribute :if_condition, options.delete(:if)
           write_inheritable_attribute :unless_condition, options.delete(:unless)
 
-          has_many :audits, :as => :auditable, :order => "#{Audit.quoted_table_name}.version"
+          has_many :audits, :as => :auditable, :order => "#{Audit.quoted_table_name}.version", :dependent => :nullify
           attr_protected :audit_ids if options[:protect]
           Audit.audited_class_names << self.to_s
 
@@ -156,6 +156,10 @@ module CollectiveIdea #:nodoc:
           include CollectiveIdea::Acts::Audited::InstanceMethods
 
           write_inheritable_attribute :auditing_enabled, true
+        end
+
+        def reserved_options
+          [:protect, :on, :create, :update, :destroy, :only, :except, :if, :unless]
         end
       end
 
@@ -243,12 +247,8 @@ module CollectiveIdea #:nodoc:
           end
         end
 
-        def on_behalf_of_result
-          evaluate(on_behalf_of_call)
-        end
-
         def set_manually_set_columns
-          manually_set_columns.inject(set_current_user) do |attrs, (attrib, value)|
+          manually_set_columns.inject({}) do |attrs, (attrib, value)|
             attrs[attrib] = evaluate(value)
             attrs
           end
@@ -299,7 +299,8 @@ module CollectiveIdea #:nodoc:
         end
 
         def write_audit(attrs)
-          attrs = attrs.merge(set_manually_set_columns)
+          attrs = attrs.merge(set_current_user)
+          attrs = attrs.merge(set_manually_set_columns) unless attrs[:action] == 'destroy'
           self.audits.create attrs if auditing_enabled && eval_if_condition && eval_unless_condition
         end
       end # InstanceMethods

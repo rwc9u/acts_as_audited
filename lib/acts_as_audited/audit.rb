@@ -10,8 +10,6 @@ require 'set'
 #
 class Audit < ActiveRecord::Base
   belongs_to :auditable, :polymorphic => true
-  # belongs_to :user, :polymorphic => true
-  # belongs_to :on_behalf_of, :class_name => 'User', :foreign_key => 'on_behalf_of_id'
 
   before_create :set_version_number, :set_audit_user
 
@@ -64,14 +62,10 @@ class Audit < ActiveRecord::Base
       self.user_as_model = user :
       self.username = user
   end
-  # alias_method :user_as_model=, :user=
-  # alias_method :user=, :user_as_string=
 
   def user_as_string #:nodoc:
     self.user_as_model || self.username
   end
-  # alias_method :user_as_model, :user
-  # alias_method :user, :user_as_string
 
   def revision
     clazz = auditable_type.constantize
