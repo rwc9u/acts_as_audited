@@ -19,6 +19,9 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require 'acts_as_audited/audit'
+require 'acts_as_audited/audit_sweeper'
+
 module CollectiveIdea #:nodoc:
   module Acts #:nodoc:
     # Specify this act if you want changes to your model to be saved in an
